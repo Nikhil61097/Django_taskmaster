@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Task API</title>
+  <script src="{% static 'tasks/test_api.js' %}"></script>
+</head>
+<body>
+  <h1>Test Task API</h1>
+
+<form id="task-form">
+  <input type="hidden" id="task-id" value="" />
+  <label>Title: <input type="text" id="task-title" required /></label><br />
+  <label>Description:</label><br />
+  <textarea id="task-description" rows="4" cols="50"></textarea><br />
+  <label>Completed: <input type="checkbox" id="task-completed" /></label><br />
+  <button type="submit">Save Task</button>
+  <button type="button" id="cancel-edit" style="display:none;">Cancel Edit</button>
+</form>
+
+  <h2>Task List</h2>
+  <ul id="task-list" style="list-style-type: none; padding-left: 0;"></ul>
+
+  <button onclick="logout()">Logout</button>
+</body>
+</html>

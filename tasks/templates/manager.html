@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manager Dashboard</title>
+  <script defer src="{% static 'tasks/manager.js' %}"></script>
+</head>
+<body>
+  <h1>Manager Dashboard</h1>
+
+  <h2>Create a New User</h2>
+  <form id="user-form">
+    <label>Username: <input type="text" id="new-username" required /></label><br />
+    <label>Password: <input type="password" id="new-password" required /></label><br />
+    <button type="submit">Create User</button>
+  </form>
+
+  <hr />
+
+  <h2>Assign a Task</h2>
+  <form id="task-form">
+    <label>User:
+      <select id="user-select"></select>
+    </label><br />
+    <label>Title: <input type="text" id="task-title" required /></label><br />
+    <label>Description:</label><br />
+    <textarea id="task-desc" rows="2"></textarea><br />
+    <label>Completed: <input type="checkbox" id="task-completed" /></label><br />
+    <button type="submit">Assign Task</button>
+  </form>
+
+  <hr />
+
+  <h2>All Tasks</h2>
+  <ul id="task-list"></ul>
+
+  <br />
+  <button onclick="logout()">Logout</button>
+</body>
+</html>
