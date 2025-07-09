@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     tasks.forEach(task => {
       const li = document.createElement('li');
-      li.textContent = `${task.title} ${task.completed ? '✅' : '❌'}`;
+      li.textContent = `${task.title} — ${task.completed ? '✅' : '❌'} (Assigned to: ${task.username || 'Unassigned'})`;
       taskList.appendChild(li);
     });
   } catch (err) {
@@ -36,3 +36,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     alert('Unexpected error:\n' + err.message);
   }
 });
+
+function getCSRFToken() {
+  let cookieValue = null;
+  const name = 'csrftoken';
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}

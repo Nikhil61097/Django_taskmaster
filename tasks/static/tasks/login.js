@@ -23,25 +23,40 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     const accessToken = data.access;
     const refreshToken = data.refresh;
 
+    // Save tokens in localStorage
     localStorage.setItem('access_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
 
-    // Decode JWT payload to check user role
+    // Decode JWT payload to check role
     const payload = JSON.parse(atob(accessToken.split('.')[1]));
     const isStaff = payload.is_staff;
 
     messageDiv.style.color = 'green';
     messageDiv.textContent = 'Login successful! Redirecting...';
 
-    // Redirect explicitly based on user role
+    // Manual redirection: always override ?next
     if (isStaff) {
       window.location.href = '/manager/';
     } else {
       window.location.href = '/dashboard/';
     }
-
   } catch (err) {
     messageDiv.textContent = 'Error: ' + err.message;
     messageDiv.style.color = 'red';
   }
 });
+function getCSRFToken() {
+  let cookieValue = null;
+  const name = 'csrftoken';
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}

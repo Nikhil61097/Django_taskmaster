@@ -6,11 +6,12 @@ from .views import (
     test_api_view,
     manager_view,
     TaskViewSet,
-    MyTokenObtainPairView,
     list_users,
     create_user,
+    logout_view,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
+from .views import TaskViewSet
 
 router = DefaultRouter()
 router.register(r'tasks', TaskViewSet)
@@ -19,16 +20,15 @@ urlpatterns = [
     # Frontend pages
     path('', login_view, name='login'),
     path('dashboard/', dashboard_view, name='dashboard'),
-    path('test-api/', test_api_view, name='test-api'),
     path('manager/', manager_view, name='manager'),
-
-    # JWT Auth
-    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-
+    
     # User Management (Manager-only)
     path('api/users/', list_users, name='list-users'),
     path('api/create-user/', create_user, name='create-user'),
+
+
+    path('logout/', logout_view, name='logout'),
+
     
 ]
 

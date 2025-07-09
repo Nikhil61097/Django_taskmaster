@@ -7,13 +7,14 @@
 </head>
 <body>
   <h2>Login</h2>
-  <form id="login-form">
-    <label>Username: <input type="text" id="username" required></label><br />
-    <label>Password: <input type="password" id="password" required></label><br />
+  {% if error %}
+    <p style="color: red;">{{ error }}</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <label>Username: <input type="text" name="username" required /></label><br />
+    <label>Password: <input type="password" name="password" required /></label><br />
     <button type="submit">Login</button>
   </form>
-  <div id="message"></div>
-
-  <script src="{% static 'tasks/login.js' %}"></script>
 </body>
 </html>

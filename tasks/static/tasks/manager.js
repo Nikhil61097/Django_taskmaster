@@ -1,104 +1,138 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('access_token');
-  if (!token) return (window.location.href = '/');
+// Helper: Get CSRF token from cookies
+function getCSRFToken() {
+  const name = 'csrftoken';
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(name + '=')) {
+      return decodeURIComponent(cookie.substring(name.length + 1));
+    }
+  }
+  return '';
+}
 
-  const userForm = document.getElementById('user-form');
-  const taskForm = document.getElementById('task-form');
-  const userSelect = document.getElementById('user-select');
-  const taskList = document.getElementById('task-list');
+// Logout function
+function logout() {
+  window.location.href = '/logout/';
+}
 
-  // Fetch all users for the dropdown
-  async function loadUsers() {
-    const res = await fetch('/api/users/', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
+// Reusable authenticated fetch wrapper (only for GET requests)
+async function fetchWithAuth(url, options = {}) {
+  options.credentials = 'include'; // Important for session-based auth
+  return fetch(url, options);
+}
 
-    const users = await res.json();
-    userSelect.innerHTML = '';
-    users.forEach(user => {
-      const opt = document.createElement('option');
-      opt.value = user.id;
-      opt.textContent = user.username;
-      userSelect.appendChild(opt);
-    });
+// Load all users (for manager view)
+async function loadUsers() {
+  const res = await fetchWithAuth('/api/users/');
+  if (!res.ok) {
+    alert('Failed to load users');
+    return;
   }
 
-  // Fetch all tasks (manager can see all)
-  async function loadTasks() {
-    const res = await fetch('/api/tasks/', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
+  const users = await res.json();
+  const list = document.getElementById('user-list');
+  const dropdown = document.getElementById('task-user');
 
-    const tasks = await res.json();
-    taskList.innerHTML = '';
+  list.innerHTML = '';
+  dropdown.innerHTML = '<option value="">Select a user</option>';
 
-    tasks.forEach(task => {
-      const li = document.createElement('li');
-      li.textContent = `(${task.user}) ${task.title} - ${task.description} ${task.completed ? '✅' : '❌'}`;
-      taskList.appendChild(li);
-    });
+  users.forEach(user => {
+    const li = document.createElement('li');
+    li.textContent = `${user.username} (id: ${user.id})`;
+    list.appendChild(li);
+
+    const option = document.createElement('option');
+    option.value = user.id;
+    option.textContent = user.username;
+    dropdown.appendChild(option);
+  });
+}
+
+// Create a new user
+async function createUser(e) {
+  e.preventDefault();
+  const username = document.getElementById('new-username').value;
+  const password = document.getElementById('new-password').value;
+
+  const res = await fetch('/api/create-user/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    credentials: 'include',
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (res.ok) {
+    alert('User created');
+    loadUsers();
+  } else {
+    const data = await res.json();
+    alert('Error: ' + (data.error || 'Unknown'));
+  }
+}
+
+// Load all tasks (manager sees all)
+async function loadTasks() {
+  const res = await fetchWithAuth('/api/tasks/');
+  if (!res.ok) {
+    alert('Failed to load tasks');
+    return;
   }
 
-  // Submit new user
-  userForm.addEventListener('submit', async e => {
-    e.preventDefault();
+  const tasks = await res.json();
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
 
-    const username = document.getElementById('new-username').value;
-    const password = document.getElementById('new-password').value;
-
-    const res = await fetch('/api/create-user/', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (res.ok) {
-      alert('User created!');
-      userForm.reset();
-      loadUsers();
-    } else {
-      alert('Failed to create user');
-    }
+  tasks.forEach(task => {
+    const li = document.createElement('li');
+    li.textContent = `${task.title} — ${task.completed ? '✅' : '❌'} (User ID: ${task.user || 'Unassigned'})`;
+    list.appendChild(li);
   });
+}
 
-  // Submit new task
-  taskForm.addEventListener('submit', async e => {
-    e.preventDefault();
+// Create a new task (with optional user)
+async function createTask(e) {
+  e.preventDefault();
+  const title = document.getElementById('task-title').value;
+  const completed = document.getElementById('task-completed').checked;
+  const userId = document.getElementById('task-user').value;
 
-    const payload = {
-      title: document.getElementById('task-title').value,
-      description: document.getElementById('task-desc').value,
-      completed: document.getElementById('task-completed').checked,
-      user: userSelect.value
-    };
-
-    const res = await fetch('/api/tasks/', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      alert('Task created!');
-      taskForm.reset();
-      loadTasks();
-    } else {
-      alert('Failed to assign task');
-    }
-  });
-
-  window.logout = function () {
-    localStorage.clear();
-    window.location.href = '/';
+  const body = {
+    title: title,
+    completed: completed,
   };
 
-  // Init load
-  loadUsers();
-  loadTasks();
-});
+  if (userId) {
+    body.user = userId;
+  }
+
+  const res = await fetch('/api/tasks/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken(),
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+
+  if (res.ok) {
+    alert('Task created');
+    loadTasks();
+  } else {
+    const data = await res.json();
+    alert('Error: ' + JSON.stringify(data));
+  }
+}
+
+// Event bindings
+document.getElementById('create-user-form').addEventListener('submit', createUser);
+document.getElementById('create-task-form').addEventListener('submit', createTask);
+document.getElementById('logout-btn').addEventListener('click', logout);
+
+// Initial load
+loadUsers();
+loadTasks();
