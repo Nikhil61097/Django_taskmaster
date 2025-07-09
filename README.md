@@ -29,3 +29,50 @@ A simple multi-user task management web application built with Django and Django
    ```bash
    git clone https://github.com/yourusername/django-task-manager.git
    cd django-task-manager
+
+2. Create & activate a virtualenv:
+
+bash
+Copy
+Edit
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+3. Install dependencies:
+
+bash
+Copy
+Edit
+pip install -r requirements.txt
+
+4. Apply migrations:
+
+bash
+Copy
+Edit
+python manage.py migrate
+
+5. (Optional) Create superuser:
+
+bash
+Copy
+Edit
+python manage.py createsuperuser
+Run the server:
+
+bash
+Copy
+Edit
+python manage.py runserver
+Open browser at http://localhost:8000/.
+
+Usage
+Login with credentials.
+
+Managers can manage all users and tasks.
+
+Regular users manage their own tasks.
+
+Unassigned tasks shown as "Unassigned".
+
+
