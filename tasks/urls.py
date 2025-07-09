@@ -9,12 +9,13 @@ from .views import (
     list_users,
     create_user,
     logout_view,
+    delete_user,
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import TaskViewSet
 
 router = DefaultRouter()
-router.register(r'tasks', TaskViewSet)
+router.register(r'tasks', TaskViewSet, basename='task')
 
 urlpatterns = [
     # Frontend pages
@@ -28,6 +29,8 @@ urlpatterns = [
 
 
     path('logout/', logout_view, name='logout'),
+
+    path('api/users/<int:pk>/', delete_user, name='delete-user'),
 
     
 ]

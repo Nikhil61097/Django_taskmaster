@@ -1,0 +1,103 @@
+/* Reset and base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 25px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+h1, h2 {
+  margin-bottom: 20px;
+  color: #222;
+}
+
+ul {
+  list-style-type: none;
+  margin-bottom: 20px;
+}
+
+li {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+.task-title {
+  font-weight: 600;
+}
+
+.task-status {
+  font-size: 1.3em;
+  margin-left: 10px;
+}
+
+.task-status.completed {
+  color: green;
+}
+
+.task-status.pending {
+  color: #d9534f;
+}
+
+button {
+  background-color: #2563eb;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  font-size: 0.9em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #1e40af;
+}
+
+form {
+  margin-bottom: 30px;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  padding: 8px 12px;
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1em;
+}
+
+label {
+  font-weight: 600;
+}
+
+.edit-section {
+  margin-top: 30px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+}

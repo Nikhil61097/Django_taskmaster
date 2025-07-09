@@ -1,24 +1,14 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const accessToken = localStorage.getItem('access_token');
-
-  if (!accessToken) {
-    alert('You are not logged in. Redirecting to login...');
-    window.location.href = '/';
-    return;
-  }
-
   try {
     const response = await fetch('/api/tasks/', {
-      headers: {
-        'Authorization': 'Bearer ' + accessToken
-      }
+      credentials: 'include', // important to send session cookie
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Fetch failed:', errorText);
       alert('Failed to fetch tasks.\n\nDetails:\n' + errorText);
-      return;  // 🔁 DO NOT redirect immediately, let dev debug
+      return;
     }
 
     const tasks = await response.json();
@@ -28,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     tasks.forEach(task => {
       const li = document.createElement('li');
-      li.textContent = `${task.title} — ${task.completed ? '✅' : '❌'} (Assigned to: ${task.username || 'Unassigned'})`;
+      li.textContent = `${task.title} — ${task.completed ? '✅' : '❌'} (Assigned to: You)`;
       taskList.appendChild(li);
     });
   } catch (err) {
@@ -51,4 +41,9 @@ function getCSRFToken() {
     }
   }
   return cookieValue;
+}
+document.getElementById('logout-btn').addEventListener('click', logout);
+
+function logout() {
+  window.location.href = '/logout/';
 }

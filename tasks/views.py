@@ -15,20 +15,34 @@ from rest_framework import status
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    queryset = Task.objects.all().order_by('-created_at')
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
+    queryset = Task.objects.all()
+    
 
-def get_queryset(self):
-    user = self.request.user
-    if user.is_staff:
-        return Task.objects.all().order_by('-created_at')
-    else:
-        # Filter tasks by user; if none, returns empty queryset safely
-        return Task.objects.filter(user=user).order_by('-created_at')
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Task.objects.all().order_by('-created_at')
+        else:
+            return Task.objects.filter(user=user).order_by('-created_at')
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+def perform_create(self, serializer):
+        user = self.request.user
+        if user.is_staff:
+            # Manager can assign task to any user via 'user' field in request data
+            assigned_user_id = self.request.data.get('user')
+            if assigned_user_id:
+                try:
+                    assigned_user = User.objects.get(id=assigned_user_id)
+                    serializer.save(user=assigned_user)
+                except User.DoesNotExist:
+                    serializer.save(user=None)  # Assign None if invalid user id
+            else:
+                serializer.save(user=None)  # No user assigned means unassigned task
+        else:
+            # Normal user can only assign task to self
+            serializer.save(user=user)
 
 def login_view(request):
     if request.method == 'POST':
@@ -115,3 +129,13 @@ def perform_create(self, serializer):
     else:
         # auto-assign the logged-in user
         serializer.save(user=self.request.user)
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_user(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+        user.delete()
+        return Response({'message': 'User deleted'}, status=status.HTTP_204_NO_CONTENT)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)

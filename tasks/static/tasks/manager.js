@@ -1,4 +1,5 @@
-// Helper: Get CSRF token from cookies
+// -------------------- Utilities --------------------
+
 function getCSRFToken() {
   const name = 'csrftoken';
   const cookies = document.cookie.split(';');
@@ -11,18 +12,17 @@ function getCSRFToken() {
   return '';
 }
 
-// Logout function
 function logout() {
   window.location.href = '/logout/';
 }
 
-// Reusable authenticated fetch wrapper (only for GET requests)
 async function fetchWithAuth(url, options = {}) {
-  options.credentials = 'include'; // Important for session-based auth
+  options.credentials = 'include'; // For session auth
   return fetch(url, options);
 }
 
-// Load all users (for manager view)
+// -------------------- Load Users --------------------
+
 async function loadUsers() {
   const res = await fetchWithAuth('/api/users/');
   if (!res.ok) {
@@ -31,50 +31,45 @@ async function loadUsers() {
   }
 
   const users = await res.json();
-  const list = document.getElementById('user-list');
-  const dropdown = document.getElementById('task-user');
+  const userList = document.getElementById('user-list');
+  const taskUserDropdown = document.getElementById('task-user');
+  const editUserInput = document.getElementById('edit-task-user-id');
 
-  list.innerHTML = '';
-  dropdown.innerHTML = '<option value="">Select a user</option>';
+  userList.innerHTML = '';
+  taskUserDropdown.innerHTML = '<option value="">Select a user</option>';
+  editUserInput.innerHTML = '<option value="">Unassigned</option>';
+
+  userIdToName = {}; // reset mapping
 
   users.forEach(user => {
     const li = document.createElement('li');
     li.textContent = `${user.username} (id: ${user.id})`;
-    list.appendChild(li);
 
-    const option = document.createElement('option');
-    option.value = user.id;
-    option.textContent = user.username;
-    dropdown.appendChild(option);
+    // Delete button for user
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.style.marginLeft = '10px';
+    deleteBtn.onclick = () => deleteUser(user.id);
+    li.appendChild(deleteBtn);
+
+    userList.appendChild(li);
+
+    const opt1 = document.createElement('option');
+    opt1.value = user.id;
+    opt1.textContent = user.username;
+    taskUserDropdown.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = user.id;
+    opt2.textContent = user.username;
+    editUserInput.appendChild(opt2.cloneNode(true));
+
+    userIdToName[user.id] = user.username;
   });
 }
 
-// Create a new user
-async function createUser(e) {
-  e.preventDefault();
-  const username = document.getElementById('new-username').value;
-  const password = document.getElementById('new-password').value;
+// -------------------- Task Functions --------------------
 
-  const res = await fetch('/api/create-user/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
-    },
-    credentials: 'include',
-    body: JSON.stringify({ username, password }),
-  });
-
-  if (res.ok) {
-    alert('User created');
-    loadUsers();
-  } else {
-    const data = await res.json();
-    alert('Error: ' + (data.error || 'Unknown'));
-  }
-}
-
-// Load all tasks (manager sees all)
 async function loadTasks() {
   const res = await fetchWithAuth('/api/tasks/');
   if (!res.ok) {
@@ -88,51 +83,184 @@ async function loadTasks() {
 
   tasks.forEach(task => {
     const li = document.createElement('li');
-    li.textContent = `${task.title} — ${task.completed ? '✅' : '❌'} (User ID: ${task.user || 'Unassigned'})`;
+    const username = task.user ? (userIdToName[task.user] || 'Unknown') : 'Unassigned';
+
+    li.innerHTML = `
+      ${task.title} — ${task.completed ? '✅' : '❌'}
+      (User: ${username})
+    `;
+
+    // Edit button
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit';
+    editBtn.style.marginLeft = '10px';
+    editBtn.onclick = () => showEditForm(task);
+    li.appendChild(editBtn);
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.style.marginLeft = '10px';
+    deleteBtn.onclick = () => deleteTask(task.id);
+    li.appendChild(deleteBtn);
+
     list.appendChild(li);
   });
 }
 
-// Create a new task (with optional user)
 async function createTask(e) {
   e.preventDefault();
   const title = document.getElementById('task-title').value;
   const completed = document.getElementById('task-completed').checked;
   const userId = document.getElementById('task-user').value;
 
-  const body = {
-    title: title,
-    completed: completed,
-  };
-
-  if (userId) {
-    body.user = userId;
-  }
+  const body = { title, completed };
+  if (userId) body.user = userId;
 
   const res = await fetch('/api/tasks/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-CSRFToken': getCSRFToken(),
+      'X-CSRFToken': getCSRFToken()
     },
     credentials: 'include',
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
 
   if (res.ok) {
     alert('Task created');
     loadTasks();
   } else {
-    const data = await res.json();
-    alert('Error: ' + JSON.stringify(data));
+    const err = await res.json();
+    alert('Error: ' + JSON.stringify(err));
   }
 }
 
-// Event bindings
+// -------------------- Edit Task --------------------
+
+function showEditForm(task) {
+  document.getElementById('edit-section').style.display = 'block';
+  document.getElementById('edit-task-id').value = task.id;
+  document.getElementById('edit-task-title').value = task.title;
+  document.getElementById('edit-task-completed').checked = task.completed;
+
+  const dropdown = document.getElementById('edit-task-user-id');
+  for (let option of dropdown.options) {
+    option.selected = (option.value === String(task.user));
+  }
+}
+
+async function submitEditForm(e) {
+  e.preventDefault();
+
+  const taskId = document.getElementById('edit-task-id').value;
+  const title = document.getElementById('edit-task-title').value;
+  const completed = document.getElementById('edit-task-completed').checked;
+  const user = document.getElementById('edit-task-user-id').value;
+
+  const body = { title, completed };
+  if (user !== '') {
+    body.user = user;
+  } else {
+    body.user = null;
+  }
+
+  const res = await fetchWithAuth(`/api/tasks/${taskId}/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (res.ok) {
+    alert('Task updated');
+    document.getElementById('edit-section').style.display = 'none';
+    loadTasks();
+  } else {
+    const err = await res.json();
+    alert('Update failed: ' + JSON.stringify(err));
+  }
+}
+
+// -------------------- Delete Functions --------------------
+
+async function deleteUser(userId) {
+  if (!confirm('Are you sure you want to delete this user?')) return;
+
+  const res = await fetch(`/api/users/${userId}/`, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRFToken': getCSRFToken()
+    },
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    alert('User deleted');
+    loadUsers();
+    loadTasks(); // reload tasks as some may belong to deleted user
+  } else {
+    const err = await res.json();
+    alert('Failed to delete user: ' + (err.detail || JSON.stringify(err)));
+  }
+}
+
+async function deleteTask(taskId) {
+  if (!confirm('Are you sure you want to delete this task?')) return;
+
+  const res = await fetch(`/api/tasks/${taskId}/`, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRFToken': getCSRFToken()
+    },
+    credentials: 'include'
+  });
+
+  if (res.ok) {
+    alert('Task deleted');
+    loadTasks();
+  } else {
+    const err = await res.json();
+    alert('Failed to delete task: ' + (err.detail || JSON.stringify(err)));
+  }
+}
+
+// -------------------- Create User --------------------
+
+async function createUser(e) {
+  e.preventDefault();
+  const username = document.getElementById('new-username').value;
+  const password = document.getElementById('new-password').value;
+
+  const res = await fetch('/api/create-user/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    credentials: 'include',
+    body: JSON.stringify({ username, password })
+  });
+
+  if (res.ok) {
+    alert('User created');
+    loadUsers();
+  } else {
+    const data = await res.json();
+    alert('Error: ' + (data.error || 'Unknown'));
+  }
+}
+
+// -------------------- Event Bindings --------------------
+
+document.getElementById('logout-btn').addEventListener('click', logout);
 document.getElementById('create-user-form').addEventListener('submit', createUser);
 document.getElementById('create-task-form').addEventListener('submit', createTask);
-document.getElementById('logout-btn').addEventListener('click', logout);
+document.getElementById('edit-task-form').addEventListener('submit', submitEditForm);
 
-// Initial load
+// -------------------- Initial Load --------------------
+
 loadUsers();
 loadTasks();

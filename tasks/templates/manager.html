@@ -1,6 +1,8 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
 <head>
   <meta charset="UTF-8" />
   <title>Manager Dashboard</title>
@@ -26,12 +28,38 @@
     <select id="task-user">
       <!-- Populated dynamically -->
     </select>
-    <label><input type="checkbox" id="task-completed" /> Completed</label>
+    <label>
+      <input type="checkbox" id="task-completed" />
+      Completed
+    </label>
     <button type="submit">Add Task</button>
   </form>
 
   <h2>All Tasks</h2>
   <ul id="task-list"></ul>
+
+  <!-- Edit form (hidden by default) -->
+<div id="edit-section" style="display: none;">
+  <h3>Edit Task</h3>
+  <form id="edit-task-form">
+    <input type="hidden" id="edit-task-id" />
+    
+    <label>Title:</label>
+    <input type="text" id="edit-task-title" required />
+    
+    <label>Completed:</label>
+    <input type="checkbox" id="edit-task-completed" />
+
+    <label>Assign to User:</label>
+    <select id="edit-task-user-id">
+      <option value="">Unassigned</option>
+      <!-- Options will be populated dynamically -->
+    </select>
+
+    <button type="submit">Update</button>
+  </form>
+</div>
+
 
   <script src="{% static 'tasks/manager.js' %}"></script>
 </body>
